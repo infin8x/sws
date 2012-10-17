@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 using System.Net;
 
@@ -12,11 +7,11 @@ namespace Server
 {
     class ConnectionHandler
     {
-        public HttpListener Listener { get; set; }
+        private Server Server { get; set; }
 
-        public ConnectionHandler(HttpListener listener)
+        public ConnectionHandler(Server server)
         {
-            Listener = listener;
+            Server = server;
             while (true)
             {
                 Listen();
@@ -25,26 +20,51 @@ namespace Server
 
         private void Listen()
         {
+            var start = DateTime.Now;
             // wait for request
-            var context = Listener.GetContext();
-
+            var context = Server.Listener.GetContext();
             var request = context.Request;
             var response = context.Response;
 
-            if (request.ProtocolVersion != HttpVersion.Version11) return;
-            // TODO: proper error handling
+            if (request.ProtocolVersion != HttpVersion.Version11)
+            {
+                // TODO: proper error handling    
+                return;
+            }
+            
+            if (request.HttpMethod != "GET")
+            {
+                // TODO: proper error handling
+                return;
+            }
 
-            if (request.HttpMethod != "GET") return;
-            // TODO: proper error handling
             // request is GET from here on
-            response.StatusCode = (int)HttpStatusCode.NotFound;
-            response.ContentType = "text/html";
-            response.ContentLength64 = 0;
+            FileStream requestedFile;
+            var path = Server.RootDirectory + request.RawUrl;
+
+            if (Directory.Exists(path))
+            {
+                path += "\\" + "index.html";
+                // TODO: DEFAULT_FILE constant
+            }
+            if (!File.Exists(path))
+            {
+                HttpListenerResponseFactory.CreateNotFound(response);
+            }
+            // file or directory (i.e. default file) exists; open it
+            requestedFile = File.Open(path, FileMode.Open);
+            HttpListenerResponseFactory.CreateOk(response);
+            
+            // write response and close socket
             response.Close();
 
-
-
+            IncrementStatistics(start);
         }
 
+        private void IncrementStatistics(DateTime start)
+        {
+            Server.Connections++;
+            Server.ServiceTime += (DateTime.Now - start).TotalMilliseconds;
+        }
     }
 }

@@ -12,19 +12,27 @@ namespace Server
 {
     internal class Server
     {
-
+        public HttpListener Listener { get; private set; }
+        public int Connections { get; set; }
+        public double ServiceTime { get; set; }
+        public String RootDirectory { get; set; }
 
         private static void Main(string[] args)
         {
+            new Server("C:\\_sws");
+        }
 
+        public Server(String rootDirectory)
+        {
             if (!HttpListener.IsSupported) return;
+            RootDirectory = rootDirectory;
+            Connections = 0;
 
-            var listener = new HttpListener();
-            listener.Prefixes.Add("http://+:8080/");
-
-            listener.Start();
-
-            new ConnectionHandler(listener);
+            Listener = new HttpListener();
+            Listener.Prefixes.Add("http://+:8080/");
+            
+            Listener.Start();
+            new ConnectionHandler(this);
         }
     }
 }
