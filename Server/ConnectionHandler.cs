@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -11,31 +12,39 @@ namespace Server
 {
     class ConnectionHandler
     {
-        public Server Server { get; private set; }
-        public TcpClient Client { get; set; }
+        public HttpListener Listener { get; set; }
 
-        public ConnectionHandler(Server server, TcpClient client)
+        public ConnectionHandler(HttpListener listener)
         {
-            Server = server;
-            Client = client;
-        }
-        internal void Handle()
-        {
-            using(var timer = new Timer())
+            Listener = listener;
+            while (true)
             {
-                timer.Start();
-                using (var stream = Client.GetStream())
-                {
-                    if (stream.CanRead)
-                    {
-                        var listener= new HttpListener();
-                        listener.
-                    }
-                }
+                Listen();
             }
+        }
+
+        private void Listen()
+        {
+            // wait for request
+            var context = Listener.GetContext();
+
+            var request = context.Request;
+            var response = context.Response;
+
+            if (request.ProtocolVersion != HttpVersion.Version11) return;
+            // TODO: proper error handling
+
+            if (request.HttpMethod != "GET") return;
+            // TODO: proper error handling
+            // request is GET from here on
+            response.StatusCode = (int)HttpStatusCode.NotFound;
+            response.ContentType = "text/html";
+            response.ContentLength64 = 0;
+            response.Close();
+
+
 
         }
 
-        
     }
 }
