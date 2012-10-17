@@ -14,11 +14,18 @@ namespace Server
         public string RootDirectory { get; private set; }
 
         public long Connections { get; private set; }
-
         public long ServiceTime { get; private set; }
 
+        protected bool Listening { get; set; }
+        public TcpListener Listener { get; private set; }
         public Thread ListenThread { get; set; }
-        public TcpListener TCPListener { get; private set; }
+
+        static void Main(string[] args)
+        {
+            var server = new Server("C:\\", 8080);
+            //Thread.Sleep(5000);
+            //server.Listening = false;
+        }
 
         public Server(String rootDirectory, int port)
         {
@@ -27,28 +34,25 @@ namespace Server
             Connections = 0;
             ServiceTime = 0;
 
-            TCPListener = new TcpListener(IPAddress.Any, port);
-            ListenThread = new Thread(ListenForClients);
+            Listening = true;
+            Listener = new TcpListener(IPAddress.Any, port);
+            ListenThread = new Thread(Listen);
             ListenThread.Start();
         }
 
-
-
-        private void ListenForClients()
+        private void Listen()
         {
-            TCPListener.Start();
-            while (true)
+            Listener.Start();
+            while (Listening)
             {
                 // block until client connects
-                var client = TCPListener.AcceptTcpClient();
+                var client = Listener.AcceptTcpClient();
+                // pass control to ConnectionHandler.Handle
+                var handler = new ConnectionHandler(this, client);
 
-                new Thread(HandleClientRequest).Start(client);
+                new Thread(handler.Handle).Start();
             }
-        }
-
-        static void Main(string[] args)
-        {
-            var server = new Server("C:\\", 3000);
+            Listener.Stop();
         }
 
         public double GetServiceRate()
@@ -57,15 +61,5 @@ namespace Server
             var rate = Connections / (double)ServiceTime;
             return rate * 1000;
         }
-
-        private void HandleClientRequest(object inc)
-        {
-            var client = (TcpClient) inc;
-            
-
-        }
-
-
-     
     }
 }
