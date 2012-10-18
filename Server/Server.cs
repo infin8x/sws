@@ -19,6 +19,7 @@ namespace Server
 
         private static void Main(string[] args)
         {
+            
             new Server("C:\\_sws");
         }
 

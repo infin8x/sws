@@ -8,6 +8,7 @@ _ReSharper.*
 
 # Visual Studio
 *.suo
+*.user
 
 # mstest test results
 TestResults
