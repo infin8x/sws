@@ -45,8 +45,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConnectionHandler.cs" />
-    <Compile Include="HttpListenerResponseFactory.cs" />
-    <Compile Include="Protocol.cs" />
+    <Compile Include="Protocol\HttpResponseFactory.cs" />
+    <Compile Include="Protocol\HttpRequest.cs" />
+    <Compile Include="Protocol\HttpResponse.cs" />
+    <Compile Include="Protocol\Constants.cs" />
+    <Compile Include="Protocol\ProtocolException.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

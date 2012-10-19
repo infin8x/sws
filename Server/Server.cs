@@ -1,39 +1,66 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Server
 {
-    internal class Server
+    class Server
     {
-        public HttpListener Listener { get; private set; }
-        public int Connections { get; set; }
-        public double ServiceTime { get; set; }
-        public String RootDirectory { get; set; }
+        public string RootDirectory { get; private set; }
 
-        private static void Main(string[] args)
+
+        public long Connections { get; set; }
+        public double ServiceTime { get; set; }
+
+        protected bool Listening { get; set; }
+        public TcpListener Listener { get; private set; }
+        public Thread ListenThread { get; set; }
+
+
+        static void Main(string[] args)
         {
-            
-            new Server("C:\\_sws");
+            var server = new Server("C:\\_sws", 8080);
+            //Thread.Sleep(5000);
+            //server.Listening = false;
         }
 
-        public Server(String rootDirectory)
-        {
-            if (!HttpListener.IsSupported) return;
-            RootDirectory = rootDirectory;
-            Connections = 0;
 
-            Listener = new HttpListener();
-            Listener.Prefixes.Add("http://+:8080/");
-            
+        public Server(String rootDirectory, int port)
+        {
+            RootDirectory = rootDirectory;
+
+            Connections = 0;
+            ServiceTime = 0;
+
+            Listening = true;
+            Listener = new TcpListener(IPAddress.Any, port);
+            ListenThread = new Thread(Listen);
+            ListenThread.Start();
+        }
+
+
+        private void Listen()
+        {
             Listener.Start();
-            new ConnectionHandler(this);
+            while (Listening)
+            {
+                // block until client connects
+                var client = Listener.AcceptSocket();
+                // pass control to ConnectionHandler.Handle
+                var handler = new ConnectionHandler(this, client);
+                new Thread(handler.Handle).Start();
+            }
+            Listener.Stop();
+        }
+
+
+        public double GetServiceRate()
+        {
+            if (ServiceTime.CompareTo(0.0) == 0) return long.MinValue;
+            var rate = Connections / (double)ServiceTime;
+            return rate * 1000;
         }
     }
 }
+

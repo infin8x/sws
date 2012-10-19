@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Net;
 
-namespace Server
+namespace Server.Protocol
 {
-    internal class Protocol
+    internal class Constants
     {
         // Escape characters
         public const char Space = ' ';
@@ -16,13 +16,22 @@ namespace Server
         // Some useful protocol elements
         public static Version Version = HttpVersion.Version11;
         public const String Get = "GET";
-        public const String UtcTimeFormatString = "ddd, dd MMM yyyy HH:mm:ss GMT";
+        public const String UtcTimeFormatString = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
 
         // Some useful http code text
+        public const int OkCode = 200;
         public const String OkText = "OK";
+
+        public const int MovedPermanentlyCode = 301;
         public const String MovedPermanentlyText = "Moved Permanently";
+
+        public const int BadRequestCode = 400;
         public const String BadRequestText = "Bad Request";
+
+        public const int NotFoundCode = 404;
         public const String NotFoundText = "Not Found";
+
+        public const int NotSupportedCode = 505;
         public const String NotSupportedText = "HTTP Version Not Supported";
 
         // Some useful header elements in request
@@ -53,13 +62,23 @@ namespace Server
         public const String Open = "Keep-Alive";
         public const String DefaultFile = "index.html";
         public const String MimeText = "text";
-        
+
 
         public static String GetServerInfo()
         {
             var os = Environment.OSVersion.VersionString;
             var architecture = Environment.Is64BitOperatingSystem ? "x64" : "x86";
             return ServerInfo + Space + "(" + os + Slash + architecture + ")";
+        }
+
+        public static Version GetHttpVersion(string rawVersion)
+        {
+            if (rawVersion == "HTTP/1.0")
+                return HttpVersion.Version10;
+            if (rawVersion == "HTTP/1.1")
+                return HttpVersion.Version11;
+            // TODO: protocol exception
+            return null;
         }
     }
 }

@@ -1,99 +1,80 @@
 ﻿using System;
 using System.IO;
+using System.Net.Sockets;
 using System.Threading;
 using System.Timers;
 using System.Net;
+using Server.Protocol;
 
 namespace Server
 {
     class ConnectionHandler
     {
         private Server Server { get; set; }
+        private Socket Socket { get; set; }
 
-        public ConnectionHandler(Server server)
+        public ConnectionHandler(Server server, Socket socket)
         {
             Server = server;
-            while (true)
-            {
-                Listen();
-                Console.WriteLine("Listen called");
-                Thread.Sleep(1000);
-            }
+            Socket = socket;
         }
 
-        private void Listen()
+        internal void Handle()
         {
             var start = DateTime.Now;
-            HttpListenerContext context;
+            var stream = new NetworkStream(Socket);
+            var streamReader = new StreamReader(stream);
+
+            HttpRequest request;
+            HttpResponse response = null;
+
             try
             {
-                // wait for request
-                context = Server.Listener.GetContext();
+                request = new HttpRequest(streamReader);
             }
-            catch (HttpListenerException e)
+            catch (ProtocolException e)
             {
-                // TODO: log for further analysis, or handle exception
-                // TODO: currently, 400s are handled automatically by c# - we should override if possible
-                IncrementStatistics(start);
-                throw e;
+                //if (e.Status == Constants.BadRequestCode)
+                response = HttpResponseFactory.CreateBadRequest(Constants.Close);
+                response.Write(stream);
+                PrepareToReturn(start);
+                return;
             }
-            var request = context.Request;
-            var response = context.Response;
-
             if (request.ProtocolVersion != HttpVersion.Version11)
             {
-                // TODO: proper error handling - currently ceases to function after return
-                response.Close();
-                IncrementStatistics(start);
+                response = HttpResponseFactory.CreateNotSupported(Constants.Close);
+                response.Write(stream);
+                PrepareToReturn(start);
                 return;
             }
 
-            if (request.HttpMethod != "GET")
+            if (request.Method != "GET")
             {
                 // TODO: proper error handling
-                IncrementStatistics(start);
+                PrepareToReturn(start);
                 return;
             }
 
             // request is GET from here on
             FileStream requestedFile;
-            var path = Server.RootDirectory + request.RawUrl;
+            var path = Server.RootDirectory + request.Uri;
             if (Directory.Exists(path))
-                path += "\\" + Protocol.DefaultFile;
+                path += "\\" + Constants.DefaultFile;
             if (!File.Exists(path))
-                HttpListenerResponseFactory.CreateNotFound(response, Protocol.Close);
-            // file or directory (i.e. default file) exists; open it
-            using (requestedFile = File.Open(path, FileMode.Open))
-            {
-                HttpListenerResponseFactory.CreateOk(response, new FileInfo(path), 
-                    requestedFile.Length, Protocol.Close);
-                WriteFileToOutputStream(requestedFile, response.OutputStream);
-                response.Close();
-            }
+                response = HttpResponseFactory.CreateNotFound(Constants.Close);
+            else // file or directory (i.e. default file) exists; open it
+                response = HttpResponseFactory.CreateOk(path, Constants.Close);
+            response.Write(stream);
+            // TODO: Support 304
 
-            // TODO: Support 505 and 304
-
-            IncrementStatistics(start);
+            PrepareToReturn(start);
         }
 
-        private void WriteFileToOutputStream(FileStream requestedFile, Stream outputStream)
-        {
-            var buffer = new byte[Protocol.ChunkLength];
-            var bytesToRead = requestedFile.Length;
-            var bytesRead = 0;
-            while (bytesToRead > 0)
-            {
-                var n = requestedFile.Read(buffer, bytesRead, Protocol.ChunkLength);
-                if (n == 0) break; // EOF
-                bytesRead += n;
-                bytesToRead -= n;
-                outputStream.Write(buffer, 0, bytesRead);
-            }
-            outputStream.Close();
-        }
 
-        private void IncrementStatistics(DateTime start)
+
+        private void PrepareToReturn(DateTime start)
         {
+            Socket.Close();
             Server.Connections++;
             Server.ServiceTime += (DateTime.Now - start).TotalMilliseconds;
         }
