@@ -56,7 +56,6 @@ namespace Server.Protocol
         {
             using (var requestedFile = File.Open(RequestedFilePath, FileMode.Open))
             {
-                AddHeader(Constants.ContentLength, requestedFile.Length.ToString());
                 var buffer = new byte[Constants.ChunkLength];
                 var bytesToRead = requestedFile.Length;
                 var bytesRead = 0;

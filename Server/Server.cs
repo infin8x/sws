@@ -1,52 +1,53 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Windows;
 
 namespace Server
 {
-    class Server
+    public class Server
     {
         public string RootDirectory { get; private set; }
 
-
-        public long Connections { get; set; }
-        public double ServiceTime { get; set; }
-
         protected bool Listening { get; set; }
         public TcpListener Listener { get; private set; }
-        public Thread ListenThread { get; set; }
 
-
-        static void Main(string[] args)
-        {
-            var server = new Server("C:\\_sws", 8080);
-            //Thread.Sleep(5000);
-            //server.Listening = false;
-        }
-
-
+        private Int64 _connections;
+        private Int64 _serviceTime;
+        
         public Server(String rootDirectory, int port)
         {
             RootDirectory = rootDirectory;
+            _connections = 0;
+            _serviceTime = 0;
 
-            Connections = 0;
-            ServiceTime = 0;
-
-            Listening = true;
-            Listener = new TcpListener(IPAddress.Any, port);
-            ListenThread = new Thread(Listen);
-            ListenThread.Start();
+            Start(port);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public String GetServiceRate()
+        {
+            if (_serviceTime == 0) return "Unknown";
+            var rate = _connections / (double)_serviceTime;
+            return (rate * 1000).ToString();
+        }
 
         private void Listen()
         {
             Listener.Start();
             while (Listening)
             {
-                // block until client connects
-                var client = Listener.AcceptSocket();
+                Socket client;
+                try
+                {
+                    // block until client connects
+                    client = Listener.AcceptSocket();
+                }
+                catch (SocketException e) // Exception thrown when socket is closed in Stop()
+                { break; }
                 // pass control to ConnectionHandler.Handle
                 var handler = new ConnectionHandler(this, client);
                 new Thread(handler.Handle).Start();
@@ -54,12 +55,24 @@ namespace Server
             Listener.Stop();
         }
 
-
-        public double GetServiceRate()
+        private void Start(int port)
         {
-            if (ServiceTime.CompareTo(0.0) == 0) return long.MinValue;
-            var rate = Connections / (double)ServiceTime;
-            return rate * 1000;
+            Listening = true;
+            Listener = new TcpListener(IPAddress.Any, port);
+            new Thread(Listen).Start();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Stop()
+        {
+            Listening = false;
+            Listener.Server.Close();
+        }
+
+        public void IncrementStatistics(DateTime start)
+        {
+            Interlocked.Add(ref _connections, 1);
+            Interlocked.Add(ref _serviceTime, (Int64)(DateTime.Now - start).TotalMilliseconds);
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Server
     {
         private Server Server { get; set; }
         private Socket Socket { get; set; }
+        public NetworkStream Stream { get; set; }
 
         public ConnectionHandler(Server server, Socket socket)
         {
@@ -22,8 +23,8 @@ namespace Server
         internal void Handle()
         {
             var start = DateTime.Now;
-            var stream = new NetworkStream(Socket);
-            var streamReader = new StreamReader(stream);
+            Stream = new NetworkStream(Socket);
+            var streamReader = new StreamReader(Stream);
 
             HttpRequest request;
             HttpResponse response = null;
@@ -36,14 +37,14 @@ namespace Server
             {
                 //if (e.Status == Constants.BadRequestCode)
                 response = HttpResponseFactory.CreateBadRequest(Constants.Close);
-                response.Write(stream);
+                response.Write(Stream);
                 PrepareToReturn(start);
                 return;
             }
             if (request.ProtocolVersion != HttpVersion.Version11)
             {
                 response = HttpResponseFactory.CreateNotSupported(Constants.Close);
-                response.Write(stream);
+                response.Write(Stream);
                 PrepareToReturn(start);
                 return;
             }
@@ -56,7 +57,6 @@ namespace Server
             }
 
             // request is GET from here on
-            FileStream requestedFile;
             var path = Server.RootDirectory + request.Uri;
             if (Directory.Exists(path))
                 path += "\\" + Constants.DefaultFile;
@@ -64,7 +64,7 @@ namespace Server
                 response = HttpResponseFactory.CreateNotFound(Constants.Close);
             else // file or directory (i.e. default file) exists; open it
                 response = HttpResponseFactory.CreateOk(path, Constants.Close);
-            response.Write(stream);
+            response.Write(Stream);
             // TODO: Support 304
 
             PrepareToReturn(start);
@@ -74,9 +74,11 @@ namespace Server
 
         private void PrepareToReturn(DateTime start)
         {
-            Socket.Close();
-            Server.Connections++;
-            Server.ServiceTime += (DateTime.Now - start).TotalMilliseconds;
+            Stream.Close();
+            Socket.Close(); // this should close the NetworkStream and StreamReader as well
+            Server.IncrementStatistics(start);
         }
+
+
     }
 }

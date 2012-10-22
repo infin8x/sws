@@ -14,6 +14,7 @@ namespace Server.Protocol
 
             response.RequestedFilePath = file;
             var fileInfo = new FileInfo(file);
+            response.AddHeader(Constants.ContentLength, fileInfo.Length.ToString());
             response.AddHeader(Constants.LastModified, fileInfo.LastWriteTimeUtc.ToString(Constants.UtcTimeFormatString));
 
 
@@ -42,6 +43,11 @@ namespace Server.Protocol
             var response = new HttpResponse(Constants.Version, Constants.NotSupportedCode, Constants.NotSupportedText);
             FillGeneralHeader(response, connection);
             return response;
+        }
+
+        internal static HttpResponse CreateNotModified(String connection)
+        {
+            throw new NotImplementedException();
         }
 
         internal static void FillGeneralHeader(HttpResponse response, String connection)

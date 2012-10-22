@@ -1,0 +1,55 @@
+﻿<Window x:Class="ServerGui.MainWindow"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Server" Height="350" Width="525" SizeToContent="Height" Background="LightGray"
+        Closed="WindowClosed">
+    <Grid Margin="5,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" BorderBrush="Black" BorderThickness="2" Margin="0,0,0,10" Padding="3">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Black" Content="Input Parameters" />
+                <Label Grid.Row="1" Grid.Column ="0" Content="Port Number" />
+                <Label Grid.Row="2" Grid.Column ="0" Content="Root Directory" />
+
+                <TextBox Grid.Row="1" Grid.Column="1" Name="Port" Text="8080" />
+                <TextBox Grid.Row="2" Grid.Column="1" Name="RootDirectory" />
+                <Button Grid.Row="3" Grid.ColumnSpan="2" Content="Select folder" Click="SelectFolderClick" />
+            </Grid>
+        </Border>
+        
+        <Border Grid.Row="1" BorderBrush="Black" BorderThickness="2" Padding="3">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Black" Content="Lifecycle Management" />
+                <Label Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center" Content="Service Rate (Connections Serviced/Second)" />
+
+                <Button Grid.Row="1" Grid.Column="0" x:Name="StartButton" Content="Start Server" Click="StartServerClick" />
+                <Button Grid.Row="1" Grid.Column="1" x:Name="StopButton" Content="Stop Server" Click="StopServerClick" IsEnabled="False" />
+                <Label Grid.Row="2" Grid.Column="1" x:Name="ServiceRateLabel" Content="{Binding ServiceRate}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
