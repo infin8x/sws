@@ -64,21 +64,21 @@ namespace Server
                 path += "\\" + Constants.DefaultFile;
             if (!File.Exists(path))
                 response = HttpResponseFactory.CreateNotFound(Constants.Close);
-            else {
+            else
+            {
                 if (request.Headers.ContainsKey("If-Modified-Since"))
                 {
-                    DateTime ifModifiedSince = DateTime.Parse(request.Headers["If-Modified-Since"]);
-                    DateTime lastModified = File.GetLastWriteTime(path); // If-Modified-Since seems to round to the nearest minute
+                    var ifModifiedSince = DateTime.Parse(request.Headers["If-Modified-Since"]);
+                    var lastModified = File.GetLastWriteTime(path); // If-Modified-Since seems to round to the nearest minute
                     lastModified = lastModified.AddTicks(-(lastModified.Ticks % TimeSpan.TicksPerMillisecond));
-                    lastModified = lastModified.AddTicks(-(lastModified.Ticks % TimeSpan.TicksPerSecond)); 
-                    if (lastModified.CompareTo(ifModifiedSince) <= 0)
-                    {
-                        response = HttpResponseFactory.CreateNotModified(Constants.Close);
-                    }
-                    else
-                    {
-                        response = HttpResponseFactory.CreateOk(path, Constants.Close);
-                    }
+                    lastModified = lastModified.AddTicks(-(lastModified.Ticks % TimeSpan.TicksPerSecond));
+                    response = lastModified.CompareTo(ifModifiedSince) <= 0 ? 
+                        HttpResponseFactory.CreateNotModified(Constants.Close) : 
+                        HttpResponseFactory.CreateOk(path, Constants.Close);
+                }
+                else
+                {
+                    response = HttpResponseFactory.CreateOk(path, Constants.Close);
                 }
             }
             response.Write(Stream);

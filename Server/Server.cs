@@ -32,21 +32,24 @@ namespace Server
         {
             if (_serviceTime == 0) return "Unknown";
             var rate = _connections / (double)_serviceTime;
-            return (rate * 1000).ToString();
+            return (rate * 100).ToString();
         }
 
-        private void Listen()
+        private async void Listen()
         {
             Listener.Start();
+            var semaphore = new Semaphore(64, 64);
             while (Listening)
             {
+                semaphore.WaitOne();
                 Socket client;
                 try
                 {
                     // block until client connects
-                    client = Listener.AcceptSocket();
+                    semaphore.Release();
+                    client = await Listener.AcceptSocketAsync();
                 }
-                catch (SocketException e) // Exception thrown when socket is closed in Stop()
+                catch (Exception e) // Exception thrown when socket is closed in Stop()
                 { break; }
                 // pass control to ConnectionHandler.Handle
                 var handler = new ConnectionHandler(this, client);
@@ -59,7 +62,7 @@ namespace Server
         {
             Listening = true;
             Listener = new TcpListener(IPAddress.Any, port);
-            new Thread(Listen).Start();
+            Listen();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
