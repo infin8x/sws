@@ -41,6 +41,7 @@ namespace Server
                 PrepareToReturn(start);
                 return;
             }
+
             if (request.ProtocolVersion != HttpVersion.Version11)
             {
                 response = HttpResponseFactory.CreateNotSupported(Constants.Close);
@@ -51,7 +52,8 @@ namespace Server
 
             if (request.Method != "GET")
             {
-                // TODO: proper error handling
+                response = HttpResponseFactory.CreateNotImplemented(Constants.Close);
+                response.Write(Stream);
                 PrepareToReturn(start);
                 return;
             }
@@ -60,10 +62,8 @@ namespace Server
             var path = Server.RootDirectory + request.Uri;
             if (Directory.Exists(path))
                 path += "\\" + Constants.DefaultFile;
-            if (!File.Exists(path))
-                response = HttpResponseFactory.CreateNotFound(Constants.Close);
-            else // file or directory (i.e. default file) exists; open it
-                response = HttpResponseFactory.CreateOk(path, Constants.Close);
+            response = File.Exists(path) ? HttpResponseFactory.CreateOk(path, Constants.Close)
+                : HttpResponseFactory.CreateNotFound(Constants.Close);
             response.Write(Stream);
             // TODO: Support 304
 

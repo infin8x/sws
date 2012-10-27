@@ -49,6 +49,13 @@ namespace Server.Protocol
         {
             throw new NotImplementedException();
         }
+        
+        internal static HttpResponse CreateNotImplemented(String connection)
+        {
+            var response = new HttpResponse(Constants.Version, Constants.NotImplementedCode, Constants.NotImplementedText);
+            FillGeneralHeader(response, connection);
+            return response;
+        }
 
         internal static void FillGeneralHeader(HttpResponse response, String connection)
         {
@@ -76,5 +83,7 @@ namespace Server.Protocol
             }
             return mimeType;
         }
+
+
     }
 }
