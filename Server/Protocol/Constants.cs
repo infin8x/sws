@@ -35,7 +35,11 @@ namespace Server.Protocol
         public const String NotFoundText = "Not Found";
 
         public const int NotSupportedCode = 505;
-        public const String NotSupportedText = "HTTP Version Not Supported";
+        public const String NotSupportedText = "The server does not support the HTTP protocol version used in the request.";
+
+        public const int NotImplementedCode = 501;
+        public const String NotImplementedText =
+            "The server either does not recognize the request method, or it lacks the ability to fulfill the request.";
 
         // Some useful header elements in request
         public const String Host = "Host";

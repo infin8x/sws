@@ -41,6 +41,7 @@ namespace Server
                 PrepareToReturn(start);
                 return;
             }
+
             if (request.ProtocolVersion != HttpVersion.Version11)
             {
                 response = HttpResponseFactory.CreateNotSupported(Constants.Close);
@@ -51,7 +52,8 @@ namespace Server
 
             if (request.Method != "GET")
             {
-                // TODO: proper error handling
+                response = HttpResponseFactory.CreateNotImplemented(Constants.Close);
+                response.Write(Stream);
                 PrepareToReturn(start);
                 return;
             }
