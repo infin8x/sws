@@ -25,6 +25,9 @@ namespace Server.Protocol
         public const int MovedPermanentlyCode = 301;
         public const String MovedPermanentlyText = "Moved Permanently";
 
+        public const int NotModifiedCode = 304;
+        public const String NotModifiedText = "Not Modified";
+
         public const int BadRequestCode = 400;
         public const String BadRequestText = "Bad Request";
 

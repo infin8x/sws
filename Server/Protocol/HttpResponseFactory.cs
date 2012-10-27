@@ -47,7 +47,9 @@ namespace Server.Protocol
 
         internal static HttpResponse CreateNotModified(String connection)
         {
-            throw new NotImplementedException();
+            var response = new HttpResponse(Constants.Version, Constants.NotModifiedCode, Constants.NotModifiedText);
+            FillGeneralHeader(response, connection);
+            return response;
         }
 
         internal static void FillGeneralHeader(HttpResponse response, String connection)
