@@ -67,7 +67,8 @@ namespace Server.Protocol
                     bytesToRead -= n;
                     output.Write(buffer, 0, bytesRead);
                 }
-                output.Flush();
+                var line = "\r\n";
+                output.Write(Encoding.UTF8.GetBytes(line), 0, Encoding.UTF8.GetByteCount(line));
             }
         }
     }

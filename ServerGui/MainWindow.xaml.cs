@@ -13,6 +13,7 @@ namespace ServerGui
     public partial class MainWindow : Window
     {
         public Server.Server MyServer { get; private set; }
+        protected Thread ServerThread { get; set; }
         public bool IsRunning = false;
 
         public static readonly DependencyProperty ServiceRateProperty =
@@ -50,7 +51,9 @@ namespace ServerGui
             {
                 IsRunning = true;
                 ControlButtons();
-                MyServer = new Server.Server(RootDirectory.Text, port);
+                MyServer = new Server.Server(RootDirectory.Text);
+                ServerThread = new Thread(MyServer.Start);
+                ServerThread.Start(port);
                 new Thread(() =>
                                {
                                    while (IsRunning)
@@ -67,6 +70,7 @@ namespace ServerGui
         {
             IsRunning = false;
             MyServer.Stop();
+            ServerThread.Abort();
             ControlButtons();
         }
 

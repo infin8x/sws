@@ -17,14 +17,12 @@ namespace Server
 
         private Int64 _connections;
         private Int64 _serviceTime;
-        
-        public Server(String rootDirectory, int port)
+
+        public Server(String rootDirectory)
         {
             RootDirectory = rootDirectory;
             _connections = 0;
             _serviceTime = 0;
-
-            Start(port);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -45,7 +43,6 @@ namespace Server
                 Socket client;
                 try
                 {
-                    // block until client connects
                     semaphore.Release();
                     client = await Listener.AcceptSocketAsync();
                 }
@@ -53,15 +50,15 @@ namespace Server
                 { break; }
                 // pass control to ConnectionHandler.Handle
                 var handler = new ConnectionHandler(this, client);
-                new Thread(handler.Handle).Start();
+                ThreadPool.QueueUserWorkItem((threadContext) => handler.Handle());
             }
             Listener.Stop();
         }
 
-        private void Start(int port)
+        public void Start(object port)
         {
             Listening = true;
-            Listener = new TcpListener(IPAddress.Any, port);
+            Listener = new TcpListener(IPAddress.Any, (int)port);
             Listen();
         }
 
@@ -70,6 +67,7 @@ namespace Server
         {
             Listening = false;
             Listener.Server.Close();
+            
         }
 
         public void IncrementStatistics(DateTime start)

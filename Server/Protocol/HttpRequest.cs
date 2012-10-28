@@ -33,7 +33,7 @@ namespace Server.Protocol
             if (readLine.Length == 0) return;
             var tokens = readLine.Split(' ');
             Headers.Add(tokens[0].Substring(0, tokens[0].Length - 1),
-                readLine.Substring(tokens[0].Length));
+                readLine.Substring(tokens[0].Length + 1));
         }
 
         private void ParseRequest(string readLine)

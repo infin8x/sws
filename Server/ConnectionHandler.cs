@@ -24,6 +24,7 @@ namespace Server
         {
             var start = DateTime.Now;
             Stream = new NetworkStream(Socket);
+            
             var streamReader = new StreamReader(Stream);
 
             HttpRequest request;
@@ -72,8 +73,8 @@ namespace Server
                     var lastModified = File.GetLastWriteTime(path); // If-Modified-Since seems to round to the nearest minute
                     lastModified = lastModified.AddTicks(-(lastModified.Ticks % TimeSpan.TicksPerMillisecond));
                     lastModified = lastModified.AddTicks(-(lastModified.Ticks % TimeSpan.TicksPerSecond));
-                    response = lastModified.CompareTo(ifModifiedSince) <= 0 ? 
-                        HttpResponseFactory.CreateNotModified(Constants.Close) : 
+                    response = lastModified.CompareTo(ifModifiedSince) <= 0 ?
+                        HttpResponseFactory.CreateNotModified(Constants.Close) :
                         HttpResponseFactory.CreateOk(path, Constants.Close);
                 }
                 else
@@ -81,9 +82,18 @@ namespace Server
                     response = HttpResponseFactory.CreateOk(path, Constants.Close);
                 }
             }
-            response.Write(Stream);
-
-            PrepareToReturn(start);
+            if (request.Headers.ContainsKey(Constants.Connection))
+                response.Headers[Constants.Connection] = request.Headers[Constants.Connection];
+            try
+            {
+                response.Write(Stream);
+            }
+            catch (Exception e)
+            { return; }
+            if (response.Headers[Constants.Connection] != Constants.Open)
+                PrepareToReturn(start);
+            else
+                Handle();
         }
 
 
