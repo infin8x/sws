@@ -16,6 +16,8 @@ namespace Server
         protected bool Listening { get; set; }
         public TcpListener Listener { get; private set; }
         public Dictionary<IPAddress, int> ConnectionCount { get; private set; }
+        public List<IPAddress> Blocklist { get; private set; }
+        public bool Blocking { get; set; }
 
         private Int64 _connections;
         private Int64 _serviceTime;
@@ -25,8 +27,9 @@ namespace Server
             RootDirectory = rootDirectory;
             _connections = 0;
             _serviceTime = 0;
-            ConnectionCount=new Dictionary<IPAddress, int>();
-            ThreadPool.SetMaxThreads(1000, 1000);
+            ConnectionCount = new Dictionary<IPAddress, int>();
+            Blocklist = new List<IPAddress>();
+            ThreadPool.SetMaxThreads(500, 500);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -72,7 +75,6 @@ namespace Server
         {
             Listening = false;
             Listener.Server.Close();
-            
         }
 
         public void IncrementStatistics(DateTime start)

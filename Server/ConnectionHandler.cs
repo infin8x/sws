@@ -25,10 +25,24 @@ namespace Server
         {
             var start = DateTime.Now;
 
-            if (CheckDdos(Socket))
+            var endpoint = (Socket.RemoteEndPoint as IPEndPoint);
+            if (endpoint == null)
             {
                 PrepareToReturn(start);
                 return;
+            }
+            if (CheckDdos(endpoint))
+            {
+                PrepareToReturn(start);
+                return;
+            }
+            lock (Server.Blocklist)
+            {
+                if (Server.Blocking && Server.Blocklist.Contains(endpoint.Address))
+                {
+                    PrepareToReturn(start);
+                    return;
+                }
             }
             Stream = new NetworkStream(Socket);
 
@@ -103,10 +117,8 @@ namespace Server
                 Handle();
         }
 
-        private bool CheckDdos(Socket socket)
+        private bool CheckDdos(IPEndPoint endpoint)
         {
-            var endpoint = Socket.RemoteEndPoint as IPEndPoint;
-            if (endpoint == null) return true;
             lock (Server.ConnectionCount)
             {
                 if (Server.ConnectionCount.ContainsKey(endpoint.Address))
@@ -117,7 +129,12 @@ namespace Server
                 {
                     Server.ConnectionCount.Add(endpoint.Address, 1);
                 }
-                return Server.ConnectionCount[endpoint.Address] > 100;
+                if (Server.ConnectionCount[endpoint.Address] > 100)
+                {
+                    Server.Blocking = true;
+                    return true;
+                }
+                return false;
             }
         }
 
