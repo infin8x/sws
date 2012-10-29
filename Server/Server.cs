@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
@@ -14,6 +15,7 @@ namespace Server
 
         protected bool Listening { get; set; }
         public TcpListener Listener { get; private set; }
+        public Dictionary<IPAddress, int> ConnectionCount { get; private set; }
 
         private Int64 _connections;
         private Int64 _serviceTime;
@@ -23,6 +25,7 @@ namespace Server
             RootDirectory = rootDirectory;
             _connections = 0;
             _serviceTime = 0;
+            ConnectionCount=new Dictionary<IPAddress, int>();
             ThreadPool.SetMaxThreads(1000, 1000);
         }
 

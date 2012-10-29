@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Timers;
 using System.Net;
@@ -23,8 +24,14 @@ namespace Server
         internal void Handle()
         {
             var start = DateTime.Now;
+
+            if (CheckDdos(Socket))
+            {
+                PrepareToReturn(start);
+                return;
+            }
             Stream = new NetworkStream(Socket);
-            
+
             var streamReader = new StreamReader(Stream);
 
             HttpRequest request;
@@ -96,15 +103,44 @@ namespace Server
                 Handle();
         }
 
+        private bool CheckDdos(Socket socket)
+        {
+            var endpoint = Socket.RemoteEndPoint as IPEndPoint;
+            if (endpoint == null) return true;
+            lock (Server.ConnectionCount)
+            {
+                if (Server.ConnectionCount.ContainsKey(endpoint.Address))
+                {
+                    Server.ConnectionCount[endpoint.Address]++;
+                }
+                else
+                {
+                    Server.ConnectionCount.Add(endpoint.Address, 1);
+                }
+                return Server.ConnectionCount[endpoint.Address] > 100;
+            }
+        }
+
+        private void SubtractConnectionCount(Socket socket)
+        {
+            if (Socket.RemoteEndPoint as IPEndPoint == null) return;
+            lock (Server.ConnectionCount)
+            {
+                var endpoint = Socket.RemoteEndPoint as IPEndPoint;
+                if (Server.ConnectionCount.ContainsKey(endpoint.Address))
+                {
+                    Server.ConnectionCount[endpoint.Address]--;
+                }
+            }
+        }
 
 
         private void PrepareToReturn(DateTime start)
         {
-            Stream.Close();
+            SubtractConnectionCount(Socket);
+
             Socket.Close(); // this should close the NetworkStream and StreamReader as well
             Server.IncrementStatistics(start);
         }
-
-
     }
 }
