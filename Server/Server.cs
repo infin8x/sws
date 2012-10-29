@@ -23,6 +23,7 @@ namespace Server
             RootDirectory = rootDirectory;
             _connections = 0;
             _serviceTime = 0;
+            ThreadPool.SetMaxThreads(1000, 1000);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -36,7 +37,7 @@ namespace Server
         private async void Listen()
         {
             Listener.Start();
-            var semaphore = new Semaphore(64, 64);
+            var semaphore = new Semaphore(64, 512);
             while (Listening)
             {
                 semaphore.WaitOne();
@@ -50,6 +51,7 @@ namespace Server
                 { break; }
                 // pass control to ConnectionHandler.Handle
                 var handler = new ConnectionHandler(this, client);
+                
                 ThreadPool.QueueUserWorkItem((threadContext) => handler.Handle());
             }
             Listener.Stop();
